@@ -1,0 +1,307 @@
+#include <iostream>
+#include <ctime>
+#include <cstdlib>
+#include <fstream>
+#include <iomanip>
+
+using namespace std;
+
+#define MAX 1000
+
+/* ==================================================
+   RANDOM GRAPH (ADJACENCY MATRIX)
+================================================== */
+void random_graph(int matrixGraph[MAX][MAX], int numNodes, int maxEdges,
+                  int seed = 0, int start = 1, int end = 10)
+{
+    // Seed set karna, agar 0 na ho to user defined seed
+    if(seed != 0)
+        srand(seed);
+    else
+        srand(time(0)); // nahi to time se seed
+
+    // Matrix ko 0 se initialize karna
+    for(int i=0; i<numNodes; i++)
+        for(int j=0; j<numNodes; j++)
+            matrixGraph[i][j] = 0;
+
+    int edgeCount = 0;
+
+    while(edgeCount < maxEdges)
+    {
+        int fromNode = rand() % numNodes;
+        int toNode   = rand() % numNodes;
+
+        // Khud se edge na banaye aur duplicate edge na ho
+        if(fromNode != toNode && matrixGraph[fromNode][toNode] == 0)
+        {
+            int cost = start + rand() % (end - start + 1);
+            matrixGraph[fromNode][toNode] = cost;
+            matrixGraph[toNode][fromNode] = cost;
+            edgeCount++;
+        }
+    }
+}
+
+/* ==================================================
+   RANDOM GRAPH (ADJACENCY LIST)
+================================================== */
+void random_graph_list(int listGraph[MAX][MAX], int neighborCount[MAX],
+                       int numNodes, int maxEdges)
+{
+    // Neighbor count reset karna
+    for(int i=0; i<numNodes; i++)
+        neighborCount[i] = 0;
+
+    int edgeCount = 0;
+
+    while(edgeCount < maxEdges)
+    {
+        int fromNode = rand() % numNodes;
+        int toNode   = rand() % numNodes;
+
+        if(fromNode != toNode)
+        {
+            bool alreadyExists = false;
+
+            // Check karna ki edge pehle se exist na kare
+            for(int i=0; i<neighborCount[fromNode]; i++)
+            {
+                if(listGraph[fromNode][i] == toNode)
+                {
+                    alreadyExists = true;
+                    break;
+                }
+            }
+
+            if(!alreadyExists)
+            {
+                // Edge add karna dono nodes ke liye
+                listGraph[fromNode][neighborCount[fromNode]++] = toNode;
+                listGraph[toNode][neighborCount[toNode]++] = fromNode;
+                edgeCount++;
+            }
+        }
+    }
+}
+
+/* ==================================================
+   DFS USING MATRIX
+================================================== */
+void DFS_Matrix_Stack(int matrixGraph[MAX][MAX], int numNodes, int startNode, int &maxStackSize)
+{
+    bool visited[MAX] = {false};
+    int stack[MAX];
+    int top = -1;
+
+    visited[startNode] = true; // start node visit mark
+    stack[++top] = startNode;
+    maxStackSize = top + 1;
+
+    while(top != -1)
+    {
+        int currentNode = stack[top--];
+
+        // neighbors ko check karna
+        for(int i=numNodes-1; i>=0; i--)
+        {
+            if(matrixGraph[currentNode][i] != 0 && !visited[i])
+            {
+                visited[i] = true;
+                stack[++top] = i;
+                maxStackSize = max(maxStackSize, top+1); // maximum stack size track
+            }
+        }
+    }
+}
+
+/* ==================================================
+   BFS USING MATRIX
+================================================== */
+void BFS_Matrix(int matrixGraph[MAX][MAX], int numNodes, int startNode, int &maxQueueSize)
+{
+    bool visited[MAX] = {false};
+    int queue[MAX];
+    int fronts=0, rear=0;
+
+    visited[startNode] = true; // start node visit mark
+    queue[rear++] = startNode;
+    maxQueueSize = rear - front;
+
+    while(front < rear)
+    {
+        int currentNode = queue[front++];
+
+        // neighbors ko check karna
+        for(int i=0; i<numNodes; i++)
+        {
+            if(matrixGraph[currentNode][i] !=0 && !visited[i])
+            {
+                visited[i] = true;
+                queue[rear++] = i;
+                maxQueueSize = max(maxQueueSize, rear - front); // maximum queue size track
+            }
+        }
+    }
+}
+
+/* ==================================================
+   DFS USING LIST
+================================================== */
+void DFS_List_Stack(int listGraph[MAX][MAX], int neighborCount[MAX],
+                    int startNode, int &maxStackSize)
+{
+    bool visited[MAX] = {false};
+    int stack[MAX];
+    int top = -1;
+
+    visited[startNode] = true;
+    stack[++top] = startNode;
+    
+    maxStackSize = 1;
+
+    while(top != -1)
+    {
+        int currentNode = stack[top--];
+
+        for(int i=neighborCount[currentNode]-1; i>=0; i--)
+        {
+            int nextNode = listGraph[currentNode][i];
+            if(!visited[nextNode])
+            {
+                visited[nextNode] = true;
+                stack[++top] = nextNode;
+                
+                maxStackSize = max(maxStackSize, top+1);
+            }
+        }
+    }
+}
+
+/* ==================================================
+   BFS USING LIST
+================================================== */
+void BFS_List(int listGraph[MAX][MAX], int neighborCount[MAX],
+              int startNode, int &maxQueueSize)
+{
+    bool visited[MAX] = {false};
+    int queue[MAX];
+    int front=0, rear=0;
+
+    visited[startNode] = true;
+    queue[rear++] = startNode;
+    maxQueueSize = rear - front;
+
+    while(front < rear)
+    {
+        int currentNode = queue[front++];
+
+        for(int i=0; i<neighborCount[currentNode]; i++)
+        {
+            int nextNode = listGraph[currentNode][i];
+            if(!visited[nextNode])
+            {
+            	
+                visited[nextNode] = true;
+                queue[rear++] = nextNode;
+                maxQueueSize = max(maxQueueSize, rear - front);
+            }
+        }
+    }
+}
+
+/* ==================================================
+   MAIN FUNCTION
+================================================== */
+int main()
+{
+     int matrixGraph[MAX][MAX];
+    int listGraph[MAX][MAX];
+    int neighborCount[MAX];
+    int dfsListMem, bfsListMem;
+    int maxQueueSize, maxStackSize;
+
+    int testNodes[] = {10,50,100,200,300,400,500,700,900,1000};
+    int totalTests = 10;
+
+     cout.setf(ios::fixed);
+    cout.precision(6);
+
+    // Files for results
+    ofstream matrixFile("C:\\Users\\Public\\Matrix_BFS_DFS.txt");
+     ofstream listFile("C:\\Users\\Public\\List_BFS_DFS.txt");
+
+    matrixFile << left << setw(10) << "Nodes"
+               << setw(15) << "DFS_Time"
+                << setw(15) << "DFS_Mem(Bytes)"
+               << setw(15) << "BFS_Time"
+               << setw(15) << "BFS_Mem(Bytes)" << "\n";
+
+    listFile << left << setw(10) << "Nodes"
+              << setw(15) << "DFS_Time"
+             << setw(15) << "DFS_Mem(Bytes)"
+              << setw(15) << "BFS_Time"
+             << setw(15) << "BFS_Mem(Bytes)" << "\n";
+
+    for(int i=0; i<totalTests; i++)
+    {
+        int numNodes = testNodes[i];
+       int maxEdges = numNodes*2;  // sparse graph
+
+        // Random graph generate
+        random_graph(matrixGraph, numNodes, maxEdges);
+         random_graph_list(listGraph, neighborCount, numNodes, maxEdges);
+ 
+         clock_t startTime, endTime;
+
+        // ----- Matrix DFS -----
+        maxStackSize = 0;
+        startTime = clock();
+        DFS_Matrix_Stack(matrixGraph, numNodes, 0, maxStackSize);
+        endTime = clock();
+        double matrixDFSTime = double(endTime - startTime)/CLOCKS_PER_SEC;
+        int matrixDFSMem = numNodes*numNodes*sizeof(int) + maxStackSize*sizeof(int) + numNodes*sizeof(bool);
+     // Memory = adjacency matrix + DFS stack + visited array
+        // ----- Matrix BFS -----
+         maxQueueSize = 0;
+         startTime = clock();
+        BFS_Matrix(matrixGraph, numNodes, 0, maxQueueSize);
+        endTime = clock();
+        double matrixBFSTime = double(endTime - startTime)/CLOCKS_PER_SEC;
+        int matrixBFSMem = numNodes*numNodes*sizeof(int) + maxQueueSize*sizeof(int) + numNodes*sizeof(bool);
+       // Memory = adjacency matrix + BFS queue + visited array
+        // ----- List DFS -----/
+        dfsListMem = 0;
+        startTime = clock();
+        DFS_List_Stack(listGraph, neighborCount, 0, dfsListMem);
+        endTime = clock();
+        double listDFSTime = double(endTime - startTime)/CLOCKS_PER_SEC;
+        int listDFSMem = 2*maxEdges*sizeof(int) + dfsListMem*sizeof(int) + numNodes*sizeof(bool); 
+         //Memory = adjacency list + DFS stack + visited array
+
+        // ----- List BFS -----/
+        bfsListMem = 0;
+        startTime = clock();
+         BFS_List(listGraph, neighborCount, 0, bfsListMem);
+        endTime = clock();
+        double listBFSTime = double(endTime - startTime)/CLOCKS_PER_SEC;
+        int listBFSMem = 2*maxEdges*sizeof(int) + bfsListMem*sizeof(int) + numNodes*sizeof(bool);
+         // Memory = adjacency list + BFS queue + visited array
+         // ----- Write results -----
+        matrixFile << left << setw(10) << numNodes
+                   << setw(15) << matrixDFSTime
+                   << setw(15) << matrixDFSMem
+                   << setw(15) << matrixBFSTime
+                   << setw(15) << matrixBFSMem << "\n";
+
+        listFile << left << setw(10) << numNodes
+                 << setw(15) << listDFSTime
+                  << setw(15) << listDFSMem
+                 << setw(15) << listBFSTime
+                  << setw(15) << listBFSMem << "\n";
+    }
+
+    matrixFile.close();
+    listFile.close();
+}
+
