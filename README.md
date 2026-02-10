@@ -49,3 +49,9 @@ This project provides an empirical performance analysis of **Breadth-First Searc
 ## 📈 Results Highlights
 * **Memory:** Adjacency Lists showed a massive advantage in memory scaling as nodes ($V$) increased.
 * **Execution Time:** Adjacency Lists outperformed Matrices in neighbor discovery by skipping "empty" edges.
+## 📂 How to Access and Run the Project
+
+### 1. Clone the Repository
+Open your terminal or command prompt and run:
+```bash
+git clone [https://github.com/YourUsername/YourRepoName.git](https://github.com/YourUsername/YourRepoName.git)
